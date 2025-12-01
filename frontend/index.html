@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Yen Sid</h1>
+        <p class="subtitle">your Disney experience wizard</p>
+    </header>
+    <main>
+        <h2>Let's See Where You Are At</h2>
+        <p class="subtitle">Tell me how you're feeling and I'll suggest what to do next.</p>
+
+        <form id="form">
+
+            <div class="field">
+                <label for="land">Where are you right now?</label>
+                <select id="land" required>
+                    <option value="" disabled selected>Select your location</option>
+                    <option value="Main Street, U.S.A.">Main Street, U.S.A.</option>
+                    <option value="Adventureland">Adventureland</option>
+                    <option value="Frontierland">Frontierland</option>
+                    <option value="Liberty Square">Liberty Square</option>
+                    <option value="Fantasyland">Fantasyland</option>
+                    <option value="Tomorrowland">Tomorrowland</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="hunger">How hungry are you?</label>
+                <select id="hunger">
+                    <option value="" disabled selected>Select your hunger level</option>
+                    <option value="1">Not hungry at all</option>
+                    <option value="2">A little hungry</option>
+                    <option value="3">Moderately hungry</option>
+                    <option value="4">Very hungry</option>
+                    <option value="5">Starving</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="energy">How much energy do you have?</label>
+                <select id="energy">
+                    <option value="" disabled selected>Select your energy level</option>
+                    <option value="1">Very low</option>
+                    <option value="2">Low</option>
+                    <option value="3">Moderate</option>
+                    <option value="4">High</option>
+                    <option value="5">Tons of energy</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="thrill">What thrill level are you looking for?</label>
+                <select id="thrill">
+                    <option value="" disabled selected>Select your thrill preference</option>
+                    <option value="relaxing">Relaxing</option>
+                    <option value="moderate">Moderately exciting</option>
+                    <option value="thrilling">Thrilling</option>
+                </select>
+            </div>
+
+            <div class="field checkbox">
+                <label>
+                    <input type="checkbox" id="include-shows">
+                    Include shows and parades in suggestions
+                </label>    
+            </div>
+
+            <button type="submit">Get Wizard Suggestions</button>
+        </form>
+    </main> 
+    <footer>
+    </footer>
+</body>        

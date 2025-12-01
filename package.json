@@ -1,0 +1,15 @@
+{
+  "name": "yen-sid",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iccir919/yen-sid.git"
+  },
+  "author": "Neil Ricci",
+  "license": "ISC",
+  "homepage": "https://github.com/iccir919/yen-sid#readme"
+}
