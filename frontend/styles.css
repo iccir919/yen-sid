@@ -1,0 +1,90 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f3f4f6;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    max-width: 600px;
+    margin: 2.5em auto;
+    background: #ffffff;
+    padding: 2em;
+    border-radius: 1em;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+header {
+    text-align: center;
+    margin-bottom: 1.5em;
+}
+
+header h1 {
+    font-size: 2rem;
+    margin: 0;
+}
+
+header .subtitle {
+    font-size: 1rem;
+    color: #6b7280;
+    margin-top: 0.5em;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5em;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+
+.field label {
+    font-weight: bold;
+    font-size: 1rem;
+    color: #111827;
+}
+
+.field select,
+form button {
+    padding: 0.75em;
+    font-size: 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5em;
+}
+
+.field select:focus,
+form button:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px #2563eb33; 
+}
+
+.checkbox {
+    margin-top: 0.5em;
+}
+
+.checkbox label {
+    font-weight: normal;
+}   
+
+form button {
+    margin-top: 0.5em;
+    background-color: #2563eb;
+    color: #ffffff;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
