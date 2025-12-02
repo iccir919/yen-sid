@@ -10,11 +10,14 @@ export default {
     "galaxys_edge": { "lat": 33.8120, "lon": -117.9165 }
   },
   "magicKingdom": {
-    "main_street_usa": { "lat": 28.4187, "lon": -81.5812 },
-    "tomorrowland": { "lat": 28.4191, "lon": -81.5747 },
-    "fantasyland": { "lat": 28.4183, "lon": -81.5762 },
-    "adventureland": { "lat": 28.4180, "lon": -81.5832 },
-    "liberty_square": { "lat": 28.4185, "lon": -81.5790 },
-    "frontierland": { "lat": 28.4175, "lon": -81.5818 },
+    "main_street_usa": { "lat": 28.4175, "lon": -81.5812 },
+    "tomorrowland": { "lat": 28.4183, "lon": -81.5791 },
+    "fantasyland": { "lat": 28.4203, "lon": -81.581 },
+    "adventureland": { "lat": 28.4180, "lon": -81.5839 },
+    "liberty_square": { "lat": 28.4196, "lon": -81.5826 },
+    "frontierland": { "lat": 28.4189, "lon": -81.5845 },
   }
 };
+
+
+28.41894933678907, -81.58456655309348

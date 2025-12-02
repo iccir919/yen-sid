@@ -16,48 +16,31 @@
         <form id="survey-form">
             <div class="field">
                 <label for="land">Where are you right now?</label>
-                <select id="land" required>
-                    <option value="mainStreet">Main Street, U.S.A.</option>
-                    <option value="adventureland">Adventureland</option>
-                    <option value="frontierland">Frontierland</option>
-                    <option value="libertySquare">Liberty Square</option>
-                    <option value="fantasyland">Fantasyland</option>
-                    <option value="tomorrowland">Tomorrowland</option>
+                <select id="land" name="land" required>
+                    <option value="" disabled selected>— Select Your Current Land —</option>
+                    <option value="main_street_usa">🇺🇸 Main Street, U.S.A.</option>
+                    <option value="adventureland">🗿 Adventureland</option>
+                    <option value="frontierland">🤠 Frontierland</option>
+                    <option value="liberty_square">📜 Liberty Square</option>
+                    <option value="fantasyland">🏰 Fantasyland</option>
+                    <option value="tomorrowland">🚀 Tomorrowland</option>
                 </select>
             </div>
 
             <div class="field">
-                <label for="hunger">How hungry are you?</label>
-                <select id="hunger">
-                    <option value="0">Not hungry</option>
-                    <option value="1">A little hungry</option>
-                    <option value="2">Very hungry</option>
-                </select>
-            </div>
-
-            <div class="field">
-                <label for="energy">How much energy do you have?</label>
-                <select id="energy">
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                </select>
-            </div>
-
-            <div class="field">
-                <label for="thrill">What thrill level are you looking for?</label>
-                <select id="thrill">
-                <option value="calm">Calm</option>
-                <option value="family">Family</option>
-                <option value="thrill">Thrill</option>
-                </select>
-            </div>
-
-            <div class="field checkbox">
-                <label>
-                    <input type="checkbox" id="include-shows">
-                    Include shows and parades in suggestions
-                </label>    
+                <label for="maxDistance">How far are you willing to walk to next ride?</label>
+                <input
+                    type="range"
+                    id="maxDistance"
+                    name="maxDistance"
+                    min="50" 
+                    max="400" 
+                    step="50" 
+                    value="250"
+                />
+                <div class="slider-labels">
+                    <span id="distance-label">250 meters (about 4 min. walk)</span>
+                </div>
             </div>
 
             <button type="submit">Get Wizard Suggestions</button>

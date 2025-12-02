@@ -18,6 +18,8 @@ body {
     box-shadow: 0 10px 25px rgba(15,23,42,0.12);
 }
 
+/* --- HEADER --- */
+
 header {
     text-align: center;
     margin-bottom: 1.5em;
@@ -26,6 +28,7 @@ header {
 header h1 {
     font-size: 2rem;
     margin: 0;
+    color: #1f2937;
 }
 
 header .subtitle {
@@ -33,6 +36,8 @@ header .subtitle {
     color: #6b7280;
     margin-top: 0.5em;
 }
+
+/* --- FORM STRUCTURE --- */
 
 form {
     display: flex;
@@ -52,12 +57,15 @@ form {
     color: #111827;
 }
 
+/* --- INPUT/SELECT/BUTTON BASE STYLES --- */
+
 .field select,
 form button {
     padding: 0.75em;
     font-size: 1rem;
     border: 1px solid #d1d5db;
     border-radius: 0.5em;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .field select:focus,
@@ -67,13 +75,7 @@ form button:focus {
     box-shadow: 0 0 0 1px #2563eb33; 
 }
 
-.checkbox {
-    margin-top: 0.5em;
-}
-
-.checkbox label {
-    font-weight: normal;
-}   
+/* --- BUTTON STYLES --- */
 
 form button {
     margin-top: 0.5em;
@@ -89,6 +91,42 @@ button:hover {
     background-color: #1d4ed8;
 }
 
+/* --- SLIDER SPECIFIC STYLES --- */
+
+.field input[type="range"] {
+    /* Reset default appearance */
+    appearance: none;
+    width: 100%;
+    height: 8px; /* Height of the track */
+    background: #e5e7eb;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0; /* Remove default padding */
+    margin-top: 0.5em;
+    border: none; /* Remove default border */
+}
+
+/* Slider Thumb (The circle handle) */
+.field input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #2563eb;
+    border-radius: 50%;
+    cursor: grab;
+    margin-top: 0; /* Center the thumb vertically */
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.2s;
+}
+
+.slider-labels {
+    text-align: right;
+    font-size: 0.9em;
+    color: #4b5563;
+    margin-top: 0.25em;
+}
+
+
 .results {
     margin-top: 2em;
     border-top: 1px solid #e5e7eb;
@@ -96,3 +134,60 @@ button:hover {
     font-size: 1rem;
 }
 
+.results h2 {
+    font-size: 1.25rem;
+    color: #111827;
+    margin-top: 0;
+    margin-bottom: 1em;
+    font-weight: 700;
+}
+
+.recommendations-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75em;
+}
+
+.recommendations-list li {
+    background: #f9fafb;
+    padding: 1em 1.25em;
+    border-radius: 0.5em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid #f59e0b;
+}
+
+.recommendations-list li strong {
+    flex-grow: 1;
+    font-weight: 600;
+}
+
+.recommendations-list li .wait {
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-left: 1em;
+    min-width: 80px;
+    text-align: right;
+}
+
+.recommendations-list li .distance {
+    font-size: 0.8em;
+    margin-left: 1em;
+    min-width: 65px;
+    text-align: right;   
+}
+
+/* Styles for loading and error states */
+.loading, .error {
+    text-align: center;
+    padding: 1em;
+    color: #4b5563;
+}
+
+.error {
+    color: #dc2626;
+    font-weight: bold;
+}
