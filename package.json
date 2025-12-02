@@ -2,15 +2,14 @@
   "name": "yen-sid",
   "type": "module",
   "version": "1.0.0",
-  "scripts": {
-    "dev": "next dev",
-    "start": "node server.js"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/iccir919/yen-sid.git"
   },
   "author": "Neil Ricci",
   "license": "ISC",
-  "homepage": "https://github.com/iccir919/yen-sid#readme"
+  "homepage": "https://github.com/iccir919/yen-sid#readme",
+  "dependencies": {
+    "openai": "^6.9.1"
+  }
 }
