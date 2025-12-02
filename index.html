@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <main class="container">
+        <header>
+            <h1>Yen Sid</h1>
+            <p class="subtitle">your Magic Kindgdom experience wizard</p>
+        </header>
+        
+        <form id="survey-form">
+            <div class="field">
+                <label for="land">Where are you right now?</label>
+                <select id="land" required>
+                    <option value="mainStreet">Main Street, U.S.A.</option>
+                    <option value="adventureland">Adventureland</option>
+                    <option value="frontierland">Frontierland</option>
+                    <option value="libertySquare">Liberty Square</option>
+                    <option value="fantasyland">Fantasyland</option>
+                    <option value="tomorrowland">Tomorrowland</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="hunger">How hungry are you?</label>
+                <select id="hunger">
+                    <option value="0">Not hungry</option>
+                    <option value="1">A little hungry</option>
+                    <option value="2">Very hungry</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="energy">How much energy do you have?</label>
+                <select id="energy">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="thrill">What thrill level are you looking for?</label>
+                <select id="thrill">
+                <option value="calm">Calm</option>
+                <option value="family">Family</option>
+                <option value="thrill">Thrill</option>
+                </select>
+            </div>
+
+            <div class="field checkbox">
+                <label>
+                    <input type="checkbox" id="include-shows">
+                    Include shows and parades in suggestions
+                </label>    
+            </div>
+
+            <button type="submit">Get Wizard Suggestions</button>
+        </form>
+
+        <section id="results" class="results">
+            <!-- Suggestions will be displayed here -->
+        </section>
+    </main> 
+
+    <script src="script.js"></script>
+</body>        
