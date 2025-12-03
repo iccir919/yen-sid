@@ -55,11 +55,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } catch(error) {
             console.error("Fetch error", error);
-            resultsSection.innerHTML = '<p class="error">Network error. Check your connection.</p>';
+            resultsSection.innerHTML = '<p class="error">There has been an error. Please try again.</p>';
         }
     });
 
     const displayResults = (recommendations, summary) => {
+        if (recommendations.length === 0) {
+                resultsSection.innerHTML = `<h2>${summary}</h2>`;
+            return;
+        }
+
         resultsSection.innerHTML = `
             <h2>${summary}</h2>
             <ul class="recommendations-list">
