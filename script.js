@@ -27,10 +27,12 @@ document.addEventListener("DOMContentLoaded", () => {
         // 1. Collect Data (Only current land and max distance)
         const formData = new FormData(form);
         const userPrefs = {
-            land: formData.get("land"),
-            maxDistance: parseInt(formData.get("maxDistance"), 10)
-        }
-        console.log(userPrefs)
+            land: formData.get('land'),
+            // Parse distance to integer from the slider
+            maxDistance: parseInt(formData.get('maxDistance'), 10), 
+            groupType: formData.get('groupType'),
+            priorityMode: formData.get('priorityMode')
+        };
         resultsSection.innerHTML = `<p class="loading">Casting a spell.. please wait.</p>`;
 
         try {
@@ -49,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             console.log("data", data)
             // 3. Display Results
-            displayResults(data.recommendations);
+            displayResults(data.recommendations, data.summary);
 
         } catch(error) {
             console.error("Fetch error", error);
@@ -57,9 +59,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    const displayResults = (recommendations) => {
+    const displayResults = (recommendations, summary) => {
         resultsSection.innerHTML = `
-            <h2>Your personalized suggestions have arrived!</h2>
+            <h2>${summary}</h2>
             <ul class="recommendations-list">
                 ${recommendations.map(recommendation => `
                     <li>
