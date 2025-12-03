@@ -126,7 +126,7 @@ export default async function handler(request, response) {
     }
 
     if (recommendations.length === 0) {
-      return res.status(200).json({
+      return response.status(200).json({
           recommendations: [],
           summary: "Yen Sid could not find any suitable or open attractions based on your preferences and location right now. Try expanding your walking distance or checking back later! 😔"
       });
