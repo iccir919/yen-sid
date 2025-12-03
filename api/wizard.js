@@ -137,7 +137,7 @@ export default async function handler(request, response) {
         
         const recommendationsText = recommendations.map(r => 
             // We include all necessary details: name, wait time, distance, and the score.
-            `[${r.name}] Wait: ${r.listedWaitMinutes} min | Distance: ${r.distanceMeters}m | Score: ${r.score.toFixed(1)}`
+            `Name: ${r.name} | Wait: ${r.listedWaitMinutes} min | Distance: ${r.distanceMeters}m | Score: ${r.score.toFixed(1)}`
         ).join('\n');
         
         let priorityLabel;
