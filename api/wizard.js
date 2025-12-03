@@ -125,36 +125,43 @@ export default async function handler(request, response) {
       summary: "Yen Sid's magic is working! Your personalized suggestions are below."
     }
 
-        // 2. OpenAI Integration for Natural Language Summary
-        if (recommendations.length > 0 && process.env.OPEN_API_KEY) {
-            
-            const recommendationsText = recommendations.map(r => 
-                // We include all necessary details: name, wait time, distance, and the score.
-                `[${r.name}] Wait: ${r.listedWaitMinutes} min | Distance: ${r.distanceMeters}m | Score: ${r.score.toFixed(1)}`
-            ).join('\n');
-            
-            let priorityLabel;
-            if (userPrefs.priorityMode === 'WAIT_ONLY') priorityLabel = "shortest wait time";
-            else if (userPrefs.priorityMode === 'DISTANCE_ONLY') priorityLabel = "closest proximity";
-            else priorityLabel = "best balance of wait and proximity";
+    if (recommendations.length === 0) {
+      return res.status(200).json({
+          recommendations: [],
+          summary: "Yen Sid could not find any suitable or open attractions based on your preferences and location right now. Try expanding your walking distance or checking back later! 😔"
+      });
+    }
 
-            // Craft the detailed prompt
-            const prompt = `Yen Sid is advising a guest. The group type is "${userPrefs.groupType}". The primary optimization goal is finding the ${priorityLabel}.
+    // 2. OpenAI Integration for Natural Language Summary
+    if (recommendations.length > 0 && process.env.OPEN_API_KEY) {
+        
+        const recommendationsText = recommendations.map(r => 
+            // We include all necessary details: name, wait time, distance, and the score.
+            `[${r.name}] Wait: ${r.listedWaitMinutes} min | Distance: ${r.distanceMeters}m | Score: ${r.score.toFixed(1)}`
+        ).join('\n');
+        
+        let priorityLabel;
+        if (userPrefs.priorityMode === 'WAIT_ONLY') priorityLabel = "shortest wait time";
+        else if (userPrefs.priorityMode === 'DISTANCE_ONLY') priorityLabel = "closest proximity";
+        else priorityLabel = "best balance of wait and proximity";
 
-            Based on the following top-ranked rides (which have already been scored and filtered):
-            ${recommendationsText}
+        // Craft the detailed prompt
+        const prompt = `Yen Sid is advising a guest. The group type is "${userPrefs.groupType}". The primary optimization goal is finding the ${priorityLabel}.
 
-            **Your Task:** Review this ranked list. Filter out any ride that is unsuitable or inappropriate for a group of type "${userPrefs.groupType}". Write a fun, enthusiastic, one-paragraph summary (max 3 sentences). Highlight the **top 1 or 2 suitable and available rides** by name and explain why they are the perfect choice given the current data and the guest's goal (${priorityLabel}). The response must be addressed from "Yen Sid". Do not include the raw score, wait time, or distance data in the final paragraph.`;
+        Based on the following top-ranked rides (which have already been scored and filtered):
+        ${recommendationsText}
 
-            // Call the OpenAI API
-            const completion = await client.chat.completions.create({
-                messages: [{ role: "user", content: prompt }],
-                model: "gpt-3.5-turbo", 
-            });
+        **Your Task:** Review this ranked list. Filter out any ride that is unsuitable or inappropriate for a group of type "${userPrefs.groupType}". Write a fun, enthusiastic, one-paragraph summary (max 3 sentences). Highlight the **top 1 or 2 suitable and available rides** by name and explain why they are the perfect choice given the current data and the guest's goal (${priorityLabel}). The response must be addressed from "Yen Sid". Do not include the raw score, wait time, or distance data in the final paragraph.`;
 
-            // Update the summary with the AI's response
-            finalResponse.summary = completion.choices[0].message.content.trim();
-        }
+        // Call the OpenAI API
+        const completion = await client.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            model: "gpt-3.5-turbo", 
+        });
+
+        // Update the summary with the AI's response
+        finalResponse.summary = completion.choices[0].message.content.trim();
+    }
 
     return response.status(200).json(finalResponse)
   } catch(error) {
