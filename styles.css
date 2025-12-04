@@ -1,213 +1,264 @@
-* {
-    box-sizing: border-box;
-}
-
 body {
-    margin: 0;
-    padding: 0;
-    background-color: #f3f4f6;
-    font-family: system-ui, sans-serif;
+    font-family: 'Inter', sans-serif;
+    background-color: #eef2ff; /* Light purple-blue background */
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 2rem;
 }
 
-.container {
-    max-width: 620px;
-    margin: 2.5em auto;
-    background: #ffffff;
-    padding: 2em;
-    border-radius: 1em;
-    box-shadow: 0 10px 25px rgba(15,23,42,0.12);
+#app-container {
+    width: 100%;
+    max-width: 480px;
 }
-
-/* --- HEADER --- */
 
 header {
     text-align: center;
-    margin-bottom: 1.5em;
+    margin-bottom: 2rem;
+    color: #312e81; /* Darker indigo for headings */
 }
 
 header h1 {
-    font-size: 2rem;
-    margin: 0;
-    color: #1f2937;
-}
-
-header .subtitle {
-    font-size: 1rem;
-    color: #6b7280;
-    margin-top: 0.5em;
-}
-
-/* --- FORM STRUCTURE --- */
-
-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5em;
-}
-
-.field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5em;
-}
-
-.field label {
-    font-weight: bold;
-    font-size: 1rem;
-    color: #111827;
-}
-
-/* --- INPUT/SELECT/BUTTON BASE STYLES --- */
-
-.field select,
-form button {
-    padding: 0.75em;
-    font-size: 1rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.5em;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.field select:focus,
-form button:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 1px #2563eb33; 
-}
-
-/* --- BUTTON STYLES --- */
-
-form button {
-    margin-top: 0.5em;
-    background-color: #2563eb;
-    color: #ffffff;
-    font-weight: bold;
-    cursor: pointer;
-    border: none;
-    transition: background-color 0.3s ease;
-}
-
-button:hover {
-    background-color: #1d4ed8;
-}
-
-/* --- SLIDER INPUT --- */
-
-
-.field input[type="range"] {
-    appearance: none;
-    width: 100%;
-    height: 8px;
-    background: #e5e7eb;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-top: 0.6em;
-    border: none;
-}
-
-
-.field input[type="range"]:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px #2563eb33;
-}
-
-.field input[type="range"]:hover {
-    background: #dcdfe3;
-}
-
-.slider-labels {
-    text-align: right;
-    font-size: 0.9em;
-    color: #4b5563;
-    margin-top: 0.25em;
-}
-
-/* --- RADIO INPUT --- */
-
-
-.radio-group div {
-    display: flex; 
-    align-items: center; 
-    gap: 0.5em; 
-}
-
-.radio-group {
-    display: flex;
-    flex-direction: column; 
-    gap: 0.75em;
-    margin-top: 0.25em;
-}
-
-.radio-group label {
-    font-weight: normal; 
-    cursor: pointer;
-}
-
-/* --- RESULTS SECTION --- */
-
-.results {
-    margin-top: 2em;
-    border-top: 1px solid #e5e7eb;
-    padding-top: 1em;
-    font-size: 1rem;
-}
-
-.results h2 {
-    font-size: 1.25rem;
-    color: #111827;
-    margin-top: 0;
-    margin-bottom: 1em;
+    font-size: 2.5rem;
     font-weight: 700;
+    margin-bottom: 0.5rem;
 }
 
-/* --- RECOMMENDATION LIST --- */
+header p {
+    font-size: 1rem;
+    color: #4f46e5; /* Indigo */
+}
 
+.card {
+    background-color: #ffffff;
+    padding: 2.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border-top: 5px solid #4f46e5; /* Accent border */
+    margin-bottom: 1.5rem;
+}
+
+.card h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.5rem;
+}
+
+.card h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #374151;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.park-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.park-btn {
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 1.125rem;
+    transition: all 0.2s;
+    background-color: #c7d2fe; /* Light indigo */
+    color: #312e81;
+    /* FIX 1: Removed `border: 2px solid #a5b4fc;` here because it was clashing with the hover effect. */
+    border: none; /* Removed the chunky border on the button element itself */
+    box-shadow: 0 0 0 2px #a5b4fc inset; /* Use inset shadow for a cleaner border effect */
+    cursor: pointer; /* FIX 2: Added cursor for interactivity */
+}
+
+.park-btn:hover {
+    background-color: #a5b4fc;
+    box-shadow: 0 0 0 2px #a5b4fc inset, 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.park-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px #6366f1, 0 0 0 2px #a5b4fc inset; /* A clear focus ring */
+}
+
+.small-text {
+    font-size: 0.875rem;
+    color: #6b7280;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+/* --- Buttons --- */
+/* Added a general rule for all buttons to inherit the fixes */
+.secondary-btn, .primary-btn {
+    border: none;
+    cursor: pointer; /* FIX 2: Added cursor for interactivity */
+}
+
+.button-group-top {
+    margin-bottom: 1rem;
+    text-align: left;
+}
+
+.secondary-btn {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.15s;
+}
+
+.secondary-btn:hover {
+    background-color: #e5e7eb;
+}
+
+.secondary-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px #c7d2fe; /* Light focus ring */
+}
+
+.primary-btn {
+    background-color: #4f46e5;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: background-color 0.15s;
+}
+
+.primary-btn:hover:not(:disabled) {
+    background-color: #4338ca;
+}
+
+.primary-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px #a5b4fc; /* Clean focus ring */
+}
+
+.primary-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.primary-btn.full-width {
+    width: 100%;
+}
+
+/* --- Form Elements --- */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    appearance: none; /* Remove default arrow */
+    background-color: white;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.25rem;
+    /* FIX 3: Add focus style to the select element for better accessibility/UI */
+}
+
+.form-group select:focus {
+    outline: none;
+    border-color: #4f46e5; /* Primary color border on focus */
+    box-shadow: 0 0 0 1px #4f46e5;
+}
+
+.park-details-container {
+    padding: 1rem;
+    background-color: #f1f5f9;
+    border-left: 4px solid #4f46e5;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.park-details-container p {
+    margin-bottom: 0.25rem;
+    color: #374151;
+    font-size: 0.95rem;
+}
+
+.error-text {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+/* --- Loading Spinner --- */
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-top: 4px solid #4f46e5;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 1.5rem auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* --- Results List --- */
 .recommendations-list {
     list-style: none;
     padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75em;
+    margin-top: 1rem;
 }
 
 .recommendations-list li {
     background: #f9fafb;
-    padding: 1em 1.25em;
-    border-radius: 0.5em;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     display: flex;
     justify-content: space-between;
+    flex-wrap: wrap;
     align-items: center;
-    border-left: 4px solid #f59e0b;
+    line-height: 1.4;
 }
 
 .recommendations-list li strong {
-    flex-grow: 1;
+    color: #1f2937;
+    font-weight: 700;
+    flex-basis: 100%;
+    margin-bottom: 0.25rem;
+}
+
+.wait-time {
+    color: #ef4444; /* Red for wait time */
     font-weight: 600;
 }
 
-.recommendations-list li .wait {
-    font-size: 0.9em;
-    font-weight: bold;
-    margin-left: 1em;
-    min-width: 80px;
-    text-align: right;
+.distance {
+    color: #10b981; /* Green for distance */
+    font-weight: 600;
 }
 
-.recommendations-list li .distance {
-    font-size: 0.8em;
-    margin-left: 1em;
-    min-width: 65px;
-    text-align: right;   
-}
-
-/* Styles for loading and error states */
-.loading, .error {
-    text-align: center;
-    padding: 1em;
-    color: #4b5563;
-}
-
-.error {
-    color: #dc2626;
-    font-weight: bold;
+.summary {
+    padding: 1rem;
+    background: #f0fdf4; /* Very light green/pale blue */
+    border: 1px dashed #d1fae5;
+    border-radius: 0.5rem;
+    color: #065f46;
 }

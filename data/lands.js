@@ -1,23 +1,45 @@
-export default {
-  "disneyland": {
-    "main_street_usa": { "lat": 33.8125, "lon": -117.91898 },
-    "adventureland": { "lat": 33.81074, "lon": -117.92062 },
-    "frontierland": { "lat": 33.8119, "lon": -117.9204 },
-    "fantasyland": { "lat": 33.8139, "lon": -117.91833 },
-    "tomorrowland": { "lat": 33.8127, "lon": -117.9178 },
-    "new_orleans_square": { "lat": 33.8110, "lon": -117.9190 },
-    "critters_country": { "lat": 33.8112, "lon": -117.9195 },
-    "galaxys_edge": { "lat": 33.8120, "lon": -117.9165 }
-  },
-  "magicKingdom": {
-    "main_street_usa": { "lat": 28.4175, "lon": -81.5812 },
-    "tomorrowland": { "lat": 28.4183, "lon": -81.5791 },
-    "fantasyland": { "lat": 28.4203, "lon": -81.581 },
-    "adventureland": { "lat": 28.4180, "lon": -81.5839 },
-    "liberty_square": { "lat": 28.4196, "lon": -81.5826 },
-    "frontierland": { "lat": 28.4189, "lon": -81.5845 },
-  }
+const lands = {
+    // --- MAGIC KINGDOM (FL) ---
+    magicKingdom: {
+        // Cinderella Castle Hub (The center of the park)
+        castle_hub: { lat: 28.417714, lon: -81.581335 }, 
+        
+        // Adventureland (Near Pirates of the Caribbean entrance)
+        adventureland: { lat: 28.418298, lon: -81.583307 },
+        
+        // Frontierland (Near Big Thunder Mountain entrance/dock)
+        frontierland: { lat: 28.418915, lon: -81.584742 },
+        
+        // Fantasyland (Center of the new and old Fantasyland intersection)
+        fantasyland: { lat: 28.420653, lon: -81.580211 },
+        
+        // Tomorrowland (Near the Carousel of Progress)
+        tomorrowland: { lat: 28.419266, lon: -81.578330 },
+        
+        // Liberty Square (Near Haunted Mansion/Riverboat)
+        liberty_square: { lat: 28.418903, lon: -81.582498 },
+    },
+
+    // --- DISNEYLAND PARK (CA) ---
+    disneyland: {
+        // Main Street U.S.A. (Center near the flagpole)
+        main_street: { lat: 33.810149, lon: -117.918991 },
+        
+        // Adventureland (Near Jungle Cruise entrance)
+        adventureland: { lat: 33.811822, lon: -117.920803 },
+        
+        // Frontierland/Critter Country (Near Splash Mountain/Tiana's Palace)
+        frontierland: { lat: 33.812999, lon: -117.922099 },
+        
+        // Fantasyland (Center near It's a Small World entrance)
+        fantasyland: { lat: 33.814343, lon: -117.917711 },
+        
+        // Tomorrowland (Center near Star Tours)
+        tomorrowland: { lat: 33.812613, lon: -117.915720 },
+        
+        // New Orleans Square (Near Pirates of the Caribbean)
+        new_orleans: { lat: 33.811984, lon: -117.921601 },
+    }
 };
 
-
-28.41894933678907, -81.58456655309348
+export default lands;

@@ -1,119 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Yen Sid - your Magic Kingdom experience wizard</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yen Sid's Magic Planner</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-    <main class="container">
-        <header>
-            <h1>Yen Sid</h1>
-            <p class="subtitle">your Magic Kindgdom experience wizard</p>
-        </header>
-        
-        <form id="survey-form">
-            <div class="field">
-                <label for="land">Where are you right now?</label>
-                <select id="land" name="land" required>
-                    <option value="" disabled selected>— Select Your Current Land —</option>
-                    <option value="main_street_usa">🇺🇸 Main Street, U.S.A.</option>
-                    <option value="adventureland">🗿 Adventureland</option>
-                    <option value="frontierland">🤠 Frontierland</option>
-                    <option value="liberty_square">📜 Liberty Square</option>
-                    <option value="fantasyland">🏰 Fantasyland</option>
-                    <option value="tomorrowland">🚀 Tomorrowland</option>
-                </select>
-            </div>
-
-            <div class="field">
-                <label>Who are you riding with?</label> 
-                
-                <div class="radio-group" id="groupType-group">
-                    
-                    <div>
-                        <input type="radio" id="group-thrill" name="groupType" value="Thrills and Adults" required>
-                        <label for="group-thrill">Adults/Teens (Seeking Thrills)</label>
-                    </div>
-                    
-                    <div>
-                        <input type="radio" id="group-family" name="groupType" value="Families with Young Children">
-                        <label for="group-family">Families with Young Children</label>
-                    </div>
-
-                    <div>
-                        <input type="radio" id="group-casual" name="groupType" value="All Ages (Casual)">
-                        <label for="group-casual">Mixed Group (All Ages, Casual)</label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="field">
-                <label for="maxDistance">How far are you willing to walk to next ride?</label>
-                <input
-                    type="range"
-                    id="maxDistance"
-                    name="maxDistance"
-                    min="100" 
-                    max="1000" 
-                    step="100" 
-                    value="600"
-                />
-                <div class="slider-labels">
-                    <span id="distance-label">250 meters (about 4 min. walk)</span>
-                </div>
-            </div>
-
-            <div class="field">
-                <label>How should Yen Sid prioritize the suggestions?</label>
-
-                <div class="radio-group" id="priorityMode-group">
-
-                    <div class="radio-option">
-                        <input 
-                            type="radio" 
-                            id="priority-score" 
-                            name="priorityMode" 
-                            value="SCORE_BALANCED" 
-                            checked 
-                            required
-                        >
-                        <label for="priority-score">Balanced Score (Wait + Distance) ✨</label>
-                    </div>
-
-                    <div class="radio-option">
-                        <input 
-                            type="radio" 
-                            id="priority-wait" 
-                            name="priorityMode" 
-                            value="WAIT_ONLY"
-                        >
-                        <label for="priority-wait">Shortest Wait Time Only ⏳</label>
-                    </div>
-
-                    <div class="radio-option">
-                        <input 
-                            type="radio" 
-                            id="priority-distance" 
-                            name="priorityMode" 
-                            value="DISTANCE_ONLY"
-                        >
-                        <label for="priority-distance">Closest Attraction Only 👟</label>
-                    </div>
-
-                </div>
-            </div>
-
-
-            <button type="submit">Get Wizard Suggestions</button>
-        </form>
-
-        <section id="results" class="results">
-            <!-- Suggestions will be displayed here -->
-        </section>
-    </main> 
+    <div id="app-container">
+    </div>
 
     <script src="script.js"></script>
-</body>        
+</body>
+</html>

@@ -1,81 +1,616 @@
-document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("survey-form");
-    const maxDistanceInput = document.getElementById("maxDistance");
-    const distanceLabel = document.getElementById("distance-label");
-    const resultsSection = document.getElementById("results");
-
-    // Helper to estimate walking time for the label
-    const estimateWalkTime = (meters) => {
-        // Assuming average walking speed is 1.3 meters/second
-        const seconds = meters / 1.3;
-        const minutes = Math.ceil(seconds / 60);
-        return `${minutes} min walk`;
-    }
-
-    // Initial label update
-    distanceLabel.textContent = `${maxDistanceInput.value} meters (${estimateWalkTime(maxDistanceInput.value)})`; 
-
-    // Event listener for the slider
-    maxDistanceInput.addEventListener("input", (event) => {
-        const meters = event.target.value;
-        distanceLabel.textContent = `${meters} meters (${estimateWalkTime(meters)})`;
-    });
-
-    form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-
-        // 1. Collect Data (Only current land and max distance)
-        const formData = new FormData(form);
-        const userPrefs = {
-            land: formData.get('land'),
-            // Parse distance to integer from the slider
-            maxDistance: parseInt(formData.get('maxDistance'), 10), 
-            groupType: formData.get('groupType'),
-            priorityMode: formData.get('priorityMode')
-        };
-        resultsSection.innerHTML = `<p class="loading">Casting a spell.. please wait.</p>`;
-
-        try {
-            const response = await fetch("/api/wizard", {
-                method: "POST", 
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ userPrefs })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                resultsSection.innerHTML = `<p class="error">Error: ${data.details}</p>`;
-            }
-            console.log("data", data)
-            // 3. Display Results
-            displayResults(data.recommendations, data.summary);
-
-        } catch(error) {
-            console.error("Fetch error", error);
-            resultsSection.innerHTML = '<p class="error">There has been an error. Please try again.</p>';
+const PARK_LAND_LOCATIONS = {
+    magic_kingdom: {
+        parkName: 'Magic Kingdom (FL)',
+        parkId: '75ea578a-adc8-4116-a54d-dccb60765ef9',
+        coords: { lat: 28.417666, lon: -81.581216 },
+        timeZone: 'America/New_York',
+        timeZoneAbbr: 'ET',
+        lands: {
+            castle_hub: 'Cinderella Castle Hub',
+            adventureland: 'Adventureland',
+            frontierland: 'Frontierland',
+            fantasyland: 'Fantasyland',
+            tomorrowland: 'Tomorrowland',
+            liberty_square: 'Liberty Square',
         }
-    });
-
-    const displayResults = (recommendations, summary) => {
-        if (recommendations.length === 0) {
-                resultsSection.innerHTML = `<h2>${summary}</h2>`;
-            return;
+    },
+    disneyland: {
+        parkName: 'Disneyland Park (CA)',
+        parkId: '7340550b-c14d-4def-80bb-acdb51d49a66',
+        coords: { lat: 33.81209, lon: -117.91897 },
+        timeZone: 'America/Los_Angeles',
+        timeZoneAbbr: 'PT',
+        lands: {
+            main_street: 'Main Street U.S.A.',
+            adventureland: 'Adventureland',
+            frontierland: 'Frontierland/Critter Country',
+            fantasyland: 'Fantasyland',
+            tomorrowland: 'Tomorrowland',
+            new_orleans: 'New Orleans Square',
         }
-
-        resultsSection.innerHTML = `
-            <h2>${summary}</h2>
-            <ul class="recommendations-list">
-                ${recommendations.map(recommendation => `
-                    <li>
-                        <strong>${recommendation.name}</strong>
-                        <span class="wait">Wait: ${recommendation.listedWaitMinutes} min</span> 
-                        <span class="distance">Distance: ${recommendation.distanceMeters} m</span>
-                    </li>
-                `).join("")}
-            </ul>
-        `;
     }
+};
+
+const PRIORITY_MODES = [
+    { value: 'SCORE_BALANCED', label: 'Balanced (Wait & Distance)' },
+    { value: 'WAIT_ONLY', label: 'Shortest Wait Only' },
+    { value: 'DISTANCE_ONLY', label: 'Closest Ride Only' },
+];
+
+// Mock API endpoints - these will fail as the user environment does not include a mocked server
+const APP_ENDPOINT = '/api/wizard';
+const BASE_THEMEPARKS_API = 'https://api.themeparks.wiki/v1/entity';
+const NWS_API_BASE = 'https://api.weather.gov/points';
+
+
+// ------------------------------------------------------------
+// GLOBAL STATE
+// ------------------------------------------------------------
+
+let currentView = 'PARK_SELECT';
+let selectedPark = null;
+let parkInfo = {};        // { hours, weather }
+let finalData = {};       // server results
+
+
+// ------------------------------------------------------------
+// ENTRY POINT
+// ------------------------------------------------------------
+
+document.addEventListener('DOMContentLoaded', () => {
+    buildAppShell();
+    renderCurrentView();
 });
+
+
+// ------------------------------------------------------------
+// LAYOUT + NAVIGATION
+// ------------------------------------------------------------
+
+/**
+ * Sets up the main structural elements of the application.
+ */
+function buildAppShell() {
+    const app = document.getElementById('app-container');
+    app.innerHTML = `
+        <header>
+            <h1>Yen Sid's Magic Planner</h1>
+            <p>Your guide to the quickest and closest rides.</p>
+        </header>
+        <div id="dynamic-content"></div>
+    `;
+}
+
+/**
+ * Renders the content based on the current application view state.
+ */
+function renderCurrentView() {
+    // Map view state keys to their rendering functions
+    const viewRenderers = {
+        PARK_SELECT: renderParkSelection,
+        FORM: renderForm,
+        RESULTS_LOADING: renderLoading,
+        RESULTS_DISPLAY: () => renderResults(finalData)
+    };
+    
+    const view = viewRenderers[currentView];
+
+    // Clear previous content and render the new view
+    const dynamicContent = document.getElementById('dynamic-content');
+    if (dynamicContent) {
+        dynamicContent.innerHTML = '';
+        view();
+    }
+}
+
+/**
+ * Updates the application state and triggers a re-render.
+ * @param {string} view The key of the view to navigate to.
+ */
+function navigateTo(view) {
+    currentView = view;
+    renderCurrentView();
+}
+
+
+// ------------------------------------------------------------
+// VIEW 1 — PARK SELECT
+// ------------------------------------------------------------
+
+/**
+ * Renders the initial park selection screen.
+ */
+function renderParkSelection() {
+    const container = document.getElementById('dynamic-content');
+
+    container.innerHTML = `
+        <div class="card">
+            <h2>Step 1: Choose Your Park</h2>
+            <div class="park-options">
+                ${parkButton('magic_kingdom')}
+                ${parkButton('disneyland')}
+            </div>
+            <p class="small-text">Supports Magic Kingdom (FL) and Disneyland Park (CA).</p>
+        </div>
+    `;
+
+    // Add event listeners for park selection buttons
+    container.querySelectorAll('.park-btn').forEach(btn =>
+        btn.addEventListener('click', () => {
+            selectedPark = btn.dataset.park;
+            parkInfo = {}; // Clear context data
+            finalData = {}; // Clear result data
+            navigateTo('FORM');
+        })
+    );
+}
+
+/**
+ * Generates the HTML for a single park selection button.
+ * @param {string} key The key for the park in PARK_LAND_LOCATIONS.
+ * @returns {string} HTML button string.
+ */
+function parkButton(key) {
+    const park = PARK_LAND_LOCATIONS[key];
+    const icon = key === 'magic_kingdom' ? '🏰' : '👑'; // Simple emojis for visual appeal
+    return `<button class="park-btn" data-park="${key}">${park.parkName} ${icon}</button>`;
+}
+
+
+// ------------------------------------------------------------
+// VIEW 2 — FORM + PARK CONTEXT
+// ------------------------------------------------------------
+
+/**
+ * Renders the preference form and loads dynamic park context (hours/weather).
+ */
+async function renderForm() {
+    const container = document.getElementById('dynamic-content');
+    const park = PARK_LAND_LOCATIONS[selectedPark];
+
+    container.innerHTML = formTemplate(park);
+
+    // Set up navigation and submission listeners
+    document.getElementById('back-btn').addEventListener('click', () => navigateTo('PARK_SELECT'));
+    document.getElementById('recommendation-form').addEventListener('submit', handleFormSubmit);
+
+    // Load dynamic data (hours and weather)
+    await loadParkContext(park);
+}
+
+/**
+ * Generates the HTML template for the preference form.
+ * @param {object} park The park's configuration object.
+ * @returns {string} HTML form string.
+ */
+function formTemplate(park) {
+    return `
+        <!-- Back button above the card -->
+        <div class="button-group-top">
+            <button type="button" id="back-btn" class="secondary-btn">← Change Park</button>
+        </div>
+
+        <!-- Form card -->
+        <form id="recommendation-form" class="card">
+            <h2>Step 2: ✨ Let's Find Your Perfect Ride at ${park.parkName}</h2>
+
+            <!-- Dynamic Context Area -->
+            <div id="park-context" class="park-details-container loading">
+                <p>Loading park info...</p>
+                <div class="spinner"></div>
+            </div>
+
+            <!-- Form Fields -->
+            ${selectTemplate("land", "Where are you in the park?", park.lands)}
+            ${selectTemplate("priorityMode", "Recommendation Priority", priorityModeOptions())}
+
+            <!-- Submit button full width -->
+            <div class="button-group">
+                <button type="submit" id="submit-btn" disabled class="primary-btn full-width">Find the Magic!</button>
+            </div>
+        </form>
+    `;
+}
+
+/**
+ * Generates the HTML for a standard select input.
+ * @param {string} id The element's ID and name.
+ * @param {string} label The user-facing label text.
+ * @param {(object|string)} options Object of value:label pairs or a pre-generated option string.
+ * @returns {string} HTML form group string.
+ */
+function selectTemplate(id, label, options) {
+    let optionsHtml = '<option value="" disabled selected>Select...</option>'; // Add a default disabled option
+
+    // If options is an object (like park.lands)
+    if (!Array.isArray(options) && typeof options === "object") {
+        optionsHtml += Object.entries(options)
+            .map(([value, label]) => `<option value="${value}">${label}</option>`)
+            .join("");
+    }
+    // If options is a pre-formatted string (like priorityModeOptions)
+    else if (typeof options === "string") {
+        optionsHtml += options;
+    }
+
+    return `
+        <div class="form-group">
+            <label for="${id}">${label}</label>
+            <select id="${id}" name="${id}" required>
+                ${optionsHtml}
+            </select>
+        </div>
+    `;
+}
+
+/**
+ * Generates the HTML options for the priority mode select field.
+ * @returns {string} HTML option strings.
+ */
+function priorityModeOptions() {
+    return PRIORITY_MODES.map(
+        m => `<option value="${m.value}" ${m.value === 'SCORE_BALANCED' ? 'selected' : ''}>${m.label}</option>`
+    ).join('');
+}
+
+/**
+ * Fetches and displays park context (hours and weather) and enables the form.
+ * @param {object} park The park's configuration object.
+ */
+async function loadParkContext(park) {
+    const ctx = document.getElementById('park-context');
+    const submitBtn = document.getElementById('submit-btn');
+    const prioritySelect = document.getElementById('priorityMode'); // Get the select element
+
+    // Reset initial state
+    submitBtn.disabled = true;
+    if (prioritySelect) prioritySelect.disabled = false; 
+
+    try {
+        // Fetch data in parallel.
+        const [hoursResult, weather] = await Promise.all([
+            fetchParkHours(selectedPark, park.parkId),
+            fetchWeatherForecast(park.coords.lat, park.coords.lon)
+        ]);
+
+        // Store the formatted message string for display
+        parkInfo = { hours: hoursResult.message, weather }; 
+
+        // Update UI with fetched data
+        let contextHtml = `
+            <p>${hoursResult.message}</p>
+            <p>${weather}</p>
+        `;
+
+        ctx.classList.remove('loading');
+        
+        if (hoursResult.isClosed) {
+            // Park is closed, force distance-only mode, but allow submission
+            if (prioritySelect) {
+                prioritySelect.value = 'DISTANCE_ONLY'; // Force closest ride selection
+                prioritySelect.disabled = true;        // Disable selection change
+            }
+            contextHtml += `
+                <p class="text-xs text-indigo-600 mt-2">
+                    Park is closed. Wait times are unavailable, but you can still submit 
+                    to find the <strong>Closest Ride Only</strong>.
+                </p>
+            `;
+            submitBtn.disabled = false; // <<< CHANGE: ENABLE SUBMISSION WHEN CLOSED
+        } else if (hoursResult.isAvailable) {
+            // Park is open, enable submission and priority selection
+            submitBtn.disabled = false;
+            if (prioritySelect) prioritySelect.disabled = false;
+        } else {
+            // Data unavailable case, keep disabled
+            submitBtn.disabled = true;
+            if (prioritySelect) prioritySelect.disabled = true; // Disable on error too
+        }
+
+        ctx.innerHTML = contextHtml;
+
+    } catch (e) {
+        console.error("Context load failed:", e);
+        ctx.innerHTML = `<p class="error-text">Failed to load park info. Check console for details.</p>`;
+        // Button remains disabled if context failed
+        if (prioritySelect) prioritySelect.disabled = true; 
+    }
+}
+
+
+// ------------------------------------------------------------
+// VIEW 3 — LOADING
+// ------------------------------------------------------------
+
+/**
+ * Renders the loading screen while waiting for the server response.
+ */
+function renderLoading() {
+    const container = document.getElementById('dynamic-content');
+    container.innerHTML = `
+        <div class="card">
+            <h2>Yen Sid is Conjuring...</h2>
+            <div class="summary">
+                ${parkInfo.hours || 'Loading Hours...'}<br>
+                ${parkInfo.weather || ''}<br><br>
+                Finding the best rides... Please wait.
+            </div>
+            <div class="spinner"></div>
+        </div>
+    `;
+}
+
+
+// ------------------------------------------------------------
+// API FETCH HELPERS
+// ------------------------------------------------------------
+
+async function fetchParkHours(parkKey, parkId) {
+    const park = PARK_LAND_LOCATIONS[parkKey];
+    const url = `${BASE_THEMEPARKS_API}/${parkId}/schedule`;
+    
+    // Formatting object used to display hours
+    const formatting = {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: park.timeZone,
+        hour12: true 
+    };
+
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("API call failed.");
+
+        const data = await res.json();
+        const today = new Date().toISOString().split('T')[0];
+        const now = Date.now();
+        
+        // Find today's primary operating hours entry
+        const op = data.schedule.find(s => s.date === today && s.type === 'OPERATING');
+
+        if (!op) {
+            // Schedule data missing/unknown
+            return {
+                isAvailable: false,
+                isClosed: false,
+                message: "Hours: Data unavailable."
+            };
+        }
+
+        // --- SCHEDULE FOUND: CHECK IF CURRENT TIME IS WITHIN OPERATING WINDOW ---
+        
+        // Convert ISO strings (which include timezone info) to millisecond timestamps
+        const openTime = new Date(op.openingTime).getTime();
+        const closeTime = new Date(op.closingTime).getTime();
+        
+        // Convert ISO strings to local time strings for display
+        const open = new Date(op.openingTime).toLocaleTimeString('en-US', formatting);
+        const close = new Date(op.closingTime).toLocaleTimeString('en-US', formatting);
+
+
+        if (now < openTime) {
+            // Park is not open yet
+            return {
+                isAvailable: false,
+                isClosed: true,
+                message: `Hours: <strong>Opens at ${open} ${park.timeZoneAbbr}</strong>.`
+            };
+        }
+        if (now > closeTime) {
+            // Park is already closed
+            return {
+                isAvailable: false,
+                isClosed: true,
+                message: `Hours: Park closed since ${close} ${park.timeZoneAbbr}.`
+            };
+        }
+
+        // Park is open right now (openTime <= now <= closeTime)
+        return {
+            isAvailable: true,
+            isClosed: false,
+            message: `Hours: <strong>${open} ${park.timeZoneAbbr}</strong> – <strong>${close} ${park.timeZoneAbbr}</strong> (Currently Open)`
+        };
+    } catch {
+        return {
+            isAvailable: false,
+            isClosed: false,
+            message: "Hours: Data unavailable."
+        };
+    }
+}
+
+/**
+ * Fetches the current weather forecast using the NWS API.
+ * @param {number} lat Latitude of the park.
+ * @param {number} lon Longitude of the park.
+ * @returns {Promise<string>} Formatted weather string or an error message.
+ */
+async function fetchWeatherForecast(lat, lon) {
+    try {
+        // Step 1: Get the forecast endpoint URL
+        const pointsRes = await fetch(`${NWS_API_BASE}/${lat.toFixed(4)},${lon.toFixed(4)}`);
+        if (!pointsRes.ok) throw new Error("NWS points lookup failed.");
+
+        const points = await pointsRes.json();
+        const forecastUrl = points.properties.forecast;
+
+        // Step 2: Get the forecast data
+        const forecastRes = await fetch(forecastUrl);
+        const forecast = await forecastRes.json();
+        const period = forecast.properties.periods[0]; // Today's/Current period
+
+        if (!period) return "Weather: Not available.";
+
+        return `Forecast: <strong>${period.temperature}°${period.temperatureUnit}</strong>, ${period.shortForecast}`;
+    } catch {
+        return "Weather: Data unavailable.";
+    }
+}
+
+
+// ------------------------------------------------------------
+// SUBMISSION → SERVER (Mocked)
+// ------------------------------------------------------------
+
+/**
+ * Handles the form submission, navigates to loading, and simulates a server call.
+ * @param {Event} e The form submission event.
+ */
+async function handleFormSubmit(e) {
+    e.preventDefault();
+
+    navigateTo('RESULTS_LOADING');
+
+    const form = e.target;
+
+    const payload = {
+        park: selectedPark,
+        weather: parkInfo.weather,
+        userPrefs: {
+            land: form.land.value,
+            priorityMode: form.priorityMode.value,
+        }
+    };
+
+    // --- MOCK SERVER RESPONSE ---
+    // Since the actual server at /api/wizard is not available, we simulate a response
+    
+    // Create mock data structure
+    // const mockRecommendations = [
+    //     { name: "Pirates of the Caribbean", listedWaitMinutes: 15, distanceMeters: 55 },
+    //     { name: "Haunted Mansion", listedWaitMinutes: 20, distanceMeters: 120 },
+    //     { name: "Jungle Cruise", listedWaitMinutes: 35, distanceMeters: 210 },
+    // ];
+    
+    // Simulating success after a delay
+    // await new Promise(resolve => setTimeout(resolve, 2000)); 
+    
+    // Example of successful mock data
+    // finalData = {
+    //     summary: "Based on your location in " + PARK_LAND_LOCATIONS[selectedPark].lands[form.land.value] + 
+    //              ", Yen Sid recommends prioritizing the closest attractions with low waits. The weather is currently favorable.",
+    //     recommendations: mockRecommendations,
+    //     error: null
+    // };
+
+    // Uncomment the block below to test an error scenario
+    /*
+    // Simulating failure after a delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    finalData = {
+        summary: null,
+        recommendations: [],
+        error: "Yen Sid's magic mirror is cracked. Try again later."
+    };
+    */
+    
+    // --- END MOCK SERVER RESPONSE ---
+
+
+    // In a real environment, you would use this logic:
+    try {
+        const res = await fetch("/api/wizard", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        finalData = await res.json();
+        if (!res.ok) finalData.error = finalData.error || "Server error.";
+
+    } catch (err) {
+        finalData = { error: err.message, recommendations: [] };
+    }
+
+    navigateTo('RESULTS_DISPLAY');
+}
+
+
+// ------------------------------------------------------------
+// VIEW 4 — RESULTS
+// ------------------------------------------------------------
+
+/**
+ * Renders the final results screen, showing recommendations or an error.
+ * @param {object} data The final data object from the server (or mock).
+ */
+function renderResults(data) {
+    const container = document.getElementById('dynamic-content');
+    const park = PARK_LAND_LOCATIONS[selectedPark];
+
+    if (data.error) {
+        container.innerHTML = errorTemplate(data.error);
+    } else {
+        container.innerHTML = resultsTemplate(park, data);
+    }
+
+    // Listener for starting over
+    document.getElementById('start-over-btn').addEventListener('click', () => navigateTo('PARK_SELECT'));
+}
+
+/**
+ * Generates the HTML for an error message.
+ * @param {string} message The error message to display.
+ * @returns {string} HTML string.
+ */
+function errorTemplate(message) {
+    return `
+        <div class="card">
+            <h2>Error</h2>
+            <p class="error-text">An error occurred while finding recommendations: ${message}</p>
+            <button id="start-over-btn" class="primary-btn full-width">Start Over</button>
+        </div>
+    `;
+}
+
+/**
+ * Generates the HTML for the successful results display.
+ * @param {object} park The selected park's config.
+ * @param {object} data The recommendation data.
+ * @returns {string} HTML string.
+ */
+function resultsTemplate(park, data) {
+    return `
+        <div class="card">
+            <h2>Recommendations for ${park.parkName}</h2>
+            
+            <!-- Park Context Display -->
+            <div class="park-details-container">
+                <p>${parkInfo.hours}</p>
+                <p>${parkInfo.weather}</p>
+            </div>
+
+            <!-- Summary Text -->
+            <h3>Yen Sid's Advice</h3>
+            <div class="summary">${data.summary || "No summary provided."}</div>
+
+            <!-- List of Recommendations -->
+            <h3>Top Recommendations</h3>
+            <ul class="recommendations-list">
+                ${data.recommendations?.length
+                    ? data.recommendations.map(r => recItem(r)).join('')
+                    : `<li>No rides matched your current location and preferences.</li>`}
+            </ul>
+
+            <button id="start-over-btn" class="primary-btn full-width">Start New Plan</button>
+        </div>
+    `;
+}
+
+/**
+ * Generates the HTML for a single recommendation list item.
+ * @param {object} r The recommendation object.
+ * @returns {string} HTML list item string.
+ */
+function recItem(r) {
+    return `
+        <li>
+            <strong class="text-lg">${r.name}</strong>
+            <div class="space-x-2 text-base">
+                <span class="wait-time">⏳ ${r.listedWaitMinutes} min</span>
+                <span class="distance">📍 ${r.distanceMeters}m away</span>
+            </div>
+        </li>
+    `;
+}
