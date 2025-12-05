@@ -284,7 +284,7 @@ async function loadParkContext(park) {
 
         ctx.classList.remove('loading');
         
-        if (hoursResult.isClosed) {
+        if (hoursResult.status === 'CLOSED') {
             // Park is closed, force distance-only mode, but allow submission
             if (prioritySelect) {
                 prioritySelect.value = 'DISTANCE_ONLY'; // Force closest ride selection
@@ -296,13 +296,13 @@ async function loadParkContext(park) {
                     to find the <strong>Closest Ride Only</strong>.
                 </p>
             `;
-            submitBtn.disabled = false; // <<< CHANGE: ENABLE SUBMISSION WHEN CLOSED
-        } else if (hoursResult.isAvailable) {
+            submitBtn.disabled = false; // Enable submission when closed
+        } else if (hoursResult.status === 'OPEN') {
             // Park is open, enable submission and priority selection
             submitBtn.disabled = false;
             if (prioritySelect) prioritySelect.disabled = false;
         } else {
-            // Data unavailable case, keep disabled
+            // Data unavailable case (status === 'UNKNOWN'), keep disabled
             submitBtn.disabled = true;
             if (prioritySelect) prioritySelect.disabled = true; // Disable on error too
         }
