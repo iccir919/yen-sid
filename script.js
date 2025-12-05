@@ -479,6 +479,78 @@ async function fetchParkHours(parkKey, parkId) {
 }
 
 
+async function getParkSnapshot(userPrefs, parkId) {
+  const url = `${BASE_THEMEPARKS_API}/${parkId}/live`;
+  const data = await fetchData(url);
+
+  if (!data?.liveData) {
+    return [];
+  }
+
+  const landData = lands[userPrefs.land];
+  if (!landData) {
+    throw new Error(`Unknown land: ${userPrefs.land}`);
+  }
+
+  const targetCoords = landData.coords;
+  const profile = WEIGHT_PROFILES[userPrefs.priorityMode] || WEIGHT_PROFILES.SCORE_BALANCED;
+
+  // Filter and map rides
+  const rides = data.liveData
+    .filter(item => {
+      // Only include ATTRACTION entity types
+      if (item.entityType !== 'ATTRACTION') return false;
+      
+      // Check if this attraction is in the selected land
+      const attractionLandData = lands[item.id];
+      if (!attractionLandData) return false;
+      
+      // IMPORTANT: Include rides regardless of status (OPERATING or CLOSED)
+      // This allows users to see recommendations even when park is closed
+      return true;
+    })
+    .map(item => {
+      const attractionLandData = lands[item.id];
+      const dist = haversineDistance(
+        targetCoords.lat,
+        targetCoords.lon,
+        attractionLandData.coords.lat,
+        attractionLandData.coords.lon
+      );
+
+      // Handle wait times - use 0 if not available (when closed)
+      let waitMinutes = 0;
+      
+      // Only try to get wait time if ride is OPERATING
+      if (item.status === 'OPERATING' && item.queue?.STANDBY?.waitTime != null) {
+        waitMinutes = item.queue.STANDBY.waitTime;
+      }
+
+      // Calculate score with the profile weights
+      const waitScore = waitMinutes / WAIT_DIVISOR;
+      const distScore = dist / DIST_DIVISOR;
+      const score = (
+        profile.waitFactor * waitScore +
+        profile.distanceFactor * distScore
+      );
+
+      return {
+        id: item.id,
+        name: item.name,
+        status: item.status, // Include status so frontend knows if closed
+        listedWaitMinutes: waitMinutes,
+        distanceMeters: Math.round(dist),
+        score: score
+      };
+    });
+
+  // Sort by score (lower is better)
+  rides.sort((a, b) => a.score - b.score);
+
+  // Return top 5 recommendations
+  return rides.slice(0, 5);
+}
+
 /**
  * Fetches the current weather forecast using the NWS API.
  * @param {number} lat Latitude of the park.
