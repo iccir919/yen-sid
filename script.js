@@ -260,21 +260,27 @@ function priorityModeOptions() {
 async function loadParkContext(park) {
     const ctx = document.getElementById('park-context');
     const submitBtn = document.getElementById('submit-btn');
-    const prioritySelect = document.getElementById('priorityMode'); // Get the select element
+    const prioritySelect = document.getElementById('priorityMode');
 
     // Reset initial state
     submitBtn.disabled = true;
     if (prioritySelect) prioritySelect.disabled = false; 
 
     try {
-        // Fetch data in parallel.
+        // Fetch data in parallel
         const [hoursResult, weather] = await Promise.all([
             fetchParkHours(selectedPark, park.parkId),
             fetchWeatherForecast(park.coords.lat, park.coords.lon)
         ]);
 
-        // Store the formatted message string for display
-        parkInfo = { hours: hoursResult.message, weather }; 
+        // Store complete park information
+        parkInfo = {
+            hours: hoursResult.message,
+            weather: weather,
+            status: hoursResult.status,
+            isOpen: hoursResult.isOpen,
+            ticketedEvent: hoursResult.ticketedEvent
+        };
 
         // Update UI with fetched data
         let contextHtml = `
@@ -287,8 +293,8 @@ async function loadParkContext(park) {
         if (hoursResult.status === 'CLOSED') {
             // Park is closed, force distance-only mode, but allow submission
             if (prioritySelect) {
-                prioritySelect.value = 'DISTANCE_ONLY'; // Force closest ride selection
-                prioritySelect.disabled = true;        // Disable selection change
+                prioritySelect.value = 'DISTANCE_ONLY';
+                prioritySelect.disabled = true;
             }
             contextHtml += `
                 <p class="text-xs text-indigo-600 mt-2">
@@ -296,7 +302,7 @@ async function loadParkContext(park) {
                     to find the <strong>Closest Ride Only</strong>.
                 </p>
             `;
-            submitBtn.disabled = false; // Enable submission when closed
+            submitBtn.disabled = false;
         } else if (hoursResult.status === 'OPEN') {
             // Park is open, enable submission and priority selection
             submitBtn.disabled = false;
@@ -304,7 +310,7 @@ async function loadParkContext(park) {
         } else {
             // Data unavailable case (status === 'UNKNOWN'), keep disabled
             submitBtn.disabled = true;
-            if (prioritySelect) prioritySelect.disabled = true; // Disable on error too
+            if (prioritySelect) prioritySelect.disabled = true;
         }
 
         ctx.innerHTML = contextHtml;
@@ -312,11 +318,9 @@ async function loadParkContext(park) {
     } catch (e) {
         console.error("Context load failed:", e);
         ctx.innerHTML = `<p class="error-text">Failed to load park info. Check console for details.</p>`;
-        // Button remains disabled if context failed
-        if (prioritySelect) prioritySelect.disabled = true; 
+        if (prioritySelect) prioritySelect.disabled = true;
     }
 }
-
 
 // ------------------------------------------------------------
 // VIEW 3 — LOADING
@@ -392,7 +396,9 @@ async function fetchParkHours(parkKey, parkId) {
         if (!todaySchedules.length) {
             return {
                 status: "UNKNOWN",
-                message: "Hours: Data unavailable."
+                message: "Hours: Data unavailable.",
+                isOpen: false,
+                ticketedEvent: null
             };
         }
 
@@ -407,12 +413,14 @@ async function fetchParkHours(parkKey, parkId) {
                     close: new Date(s.closingTime).toLocaleTimeString("en-US", formatting)
                 }
             }))
-            .sort((a, b) => a.openTime - b.openTime); // Sort by opening time
+            .sort((a, b) => a.openTime - b.openTime);
 
         if (!operatingWindows.length) {
             return {
                 status: "CLOSED",
-                message: "Hours: No operating hours today."
+                message: "Hours: No operating hours today.",
+                isOpen: false,
+                ticketedEvent: null
             };
         }
 
@@ -429,7 +437,13 @@ async function fetchParkHours(parkKey, parkId) {
 
             return {
                 status: "OPEN",
-                message: `Hours: <strong>${currentWindow.display.open}</strong> – <strong>${currentWindow.display.close}</strong> (Currently Open)${ticketedMessage}`
+                message: `Hours: <strong>${currentWindow.display.open}</strong> – <strong>${currentWindow.display.close}</strong> (Currently Open)${ticketedMessage}`,
+                isOpen: true,
+                ticketedEvent: ticketedNow ? {
+                    description: ticketedNow.description,
+                    openingTime: ticketedNow.openingTime,
+                    closingTime: ticketedNow.closingTime
+                } : null
             };
         }
 
@@ -438,7 +452,9 @@ async function fetchParkHours(parkKey, parkId) {
         if (nextWindow) {
             return {
                 status: "CLOSED",
-                message: `Hours: <strong>Opens at ${nextWindow.display.open}</strong> ${park.timeZoneAbbr}`
+                message: `Hours: <strong>Opens at ${nextWindow.display.open}</strong> ${park.timeZoneAbbr}`,
+                isOpen: false,
+                ticketedEvent: null
             };
         }
 
@@ -446,14 +462,18 @@ async function fetchParkHours(parkKey, parkId) {
         const lastWindow = operatingWindows[operatingWindows.length - 1];
         return {
             status: "CLOSED",
-            message: `Hours: Park closed since ${lastWindow.display.close} ${park.timeZoneAbbr}`
+            message: `Hours: Park closed since ${lastWindow.display.close} ${park.timeZoneAbbr}`,
+            isOpen: false,
+            ticketedEvent: null
         };
 
     } catch (error) {
         console.error("Error fetching park hours:", error);
         return {
             status: "UNKNOWN",
-            message: "Hours: Data unavailable."
+            message: "Hours: Data unavailable.",
+            isOpen: false,
+            ticketedEvent: null
         };
     }
 }
@@ -496,6 +516,7 @@ async function fetchWeatherForecast(lat, lon) {
  * Handles the form submission, navigates to loading, and simulates a server call.
  * @param {Event} e The form submission event.
  */
+
 async function handleFormSubmit(e) {
     e.preventDefault();
 
@@ -506,46 +527,14 @@ async function handleFormSubmit(e) {
     const payload = {
         park: selectedPark,
         weather: parkInfo.weather,
+        parkStatus: parkInfo.status,
+        isOpen: parkInfo.isOpen,
+        ticketedEvent: parkInfo.ticketedEvent,
         userPrefs: {
             land: form.land.value,
             priorityMode: form.priorityMode.value,
         }
     };
-
-    // --- MOCK SERVER RESPONSE ---
-    // Since the actual server at /api/wizard is not available, we simulate a response
-    
-    // Create mock data structure
-    // const mockRecommendations = [
-    //     { name: "Pirates of the Caribbean", listedWaitMinutes: 15, distanceMeters: 55 },
-    //     { name: "Haunted Mansion", listedWaitMinutes: 20, distanceMeters: 120 },
-    //     { name: "Jungle Cruise", listedWaitMinutes: 35, distanceMeters: 210 },
-    // ];
-    
-    // Simulating success after a delay
-    // await new Promise(resolve => setTimeout(resolve, 2000)); 
-    
-    // Example of successful mock data
-    // finalData = {
-    //     summary: "Based on your location in " + PARK_LAND_LOCATIONS[selectedPark].lands[form.land.value] + 
-    //              ", Yen Sid recommends prioritizing the closest attractions with low waits. The weather is currently favorable.",
-    //     recommendations: mockRecommendations,
-    //     error: null
-    // };
-
-    // Uncomment the block below to test an error scenario
-    /*
-    // Simulating failure after a delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    finalData = {
-        summary: null,
-        recommendations: [],
-        error: "Yen Sid's magic mirror is cracked. Try again later."
-    };
-    */
-    
-    // --- END MOCK SERVER RESPONSE ---
-
 
     // In a real environment, you would use this logic:
     try {

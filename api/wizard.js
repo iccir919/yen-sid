@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
-import lands from "../data/lands.js"; // Assuming this file exists and contains land coordinates
-import { haversineDistance } from "../lib/geo.js"; // Assuming this function exists
+import lands from "../data/lands.js";
+import { haversineDistance } from "../lib/geo.js";
 
 const DISNEYLAND_ID = "7340550b-c14d-4def-80bb-acdb51d49a66"; 
 const MAGIC_KINGDOM_ID = "75ea578a-adc8-4116-a54d-dccb60765ef9";
@@ -17,7 +17,6 @@ const WEIGHT_PROFILES = {
 const WAIT_DIVISOR = 6;
 const DIST_DIVISOR = 100;
 
-// Ensure OPEN_API_KEY is set in your Vercel environment variables
 const client = new OpenAI({
     apiKey: process.env.OPEN_API_KEY,
 });
@@ -103,8 +102,8 @@ export default async function handler(request, response) {
       return response.status(405).json({ error: 'Only POST allowed' });
   }
 
-  // Destructure 'weather' directly from the body
-  const { park, userPrefs, weather } = request.body; 
+  // Destructure all relevant fields from the body
+  const { park, userPrefs, weather, parkStatus, isOpen, ticketedEvent } = request.body; 
   const parkId = PARK_IDS[park];
 
   if (!park || !parkId) {
@@ -147,14 +146,24 @@ export default async function handler(request, response) {
         // Use the weather variable from the request body
         const currentWeather = weather || "Weather data is unavailable.";
         
+        // Build park status context
+        let parkStatusContext = "";
+        if (parkStatus === "CLOSED" || isOpen === false) {
+            parkStatusContext = "**IMPORTANT: The park is currently CLOSED.** Wait times shown are estimates or stale data. Acknowledge this and frame your recommendations as helpful planning for a future visit. Express hope that these suggestions will be useful when the guest returns.";
+        } else if (ticketedEvent) {
+            parkStatusContext = `**SPECIAL EVENT ALERT:** There is currently a ticketed event happening: "${ticketedEvent.description}". Mention this special event and how it might affect the guest's experience or create a magical atmosphere.`;
+        }
+        
         const prompt = `Yen Sid is advising a guest. The primary optimization goal is finding the ${priorityLabel}.
         
         **Current Park Weather:** ${currentWeather}
+        
+        ${parkStatusContext}
 
         Based on the following top-ranked rides (which have already been scored and filtered by wait/distance):
         ${recommendationsText}
 
-        **Your Task:** Review this ranked list and the **current weather**. Write a fun, enthusiastic, one-paragraph summary (max 3 sentences). If the weather suggests **avoiding outdoor rides** (e.g., mention of rain, storms, or extreme heat/cold), prioritize indoor or covered rides from the list. Highlight the **top 1 or 2 suitable and available rides** by name and explain why they are the perfect choice given the current data, weather, and the guest's goal (${priorityLabel}). The response must be addressed from "Yen Sid". Do not include the raw score, wait time, or distance data in the final paragraph.`;
+        **Your Task:** Review this ranked list and the **current weather**${parkStatusContext ? " and **park status**" : ""}. Write a fun, enthusiastic, one-paragraph summary (max 3 sentences). If the weather suggests **avoiding outdoor rides** (e.g., mention of rain, storms, or extreme heat/cold), prioritize indoor or covered rides from the list. Highlight the **top 1 or 2 suitable and available rides** by name and explain why they are the perfect choice given the current data, weather${parkStatusContext ? ", park status," : ""} and the guest's goal (${priorityLabel}). The response must be addressed from "Yen Sid". Do not include the raw score, wait time, or distance data in the final paragraph.`;
 
         const completion = await client.chat.completions.create({
             messages: [{ role: "user", content: prompt }],
