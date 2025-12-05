@@ -9,7 +9,6 @@ const PARK_IDS = {
     'magic_kingdom': MAGIC_KINGDOM_ID
 };
 
-const DEFAULT_MAX_DISTANCE_METERS = 800; 
 const WEIGHT_PROFILES = {
     SCORE_BALANCED: { waitFactor: 1.0, distanceFactor: 1.0 }, 
     WAIT_ONLY:      { waitFactor: 100.0, distanceFactor: 0.001 },

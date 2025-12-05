@@ -74,7 +74,7 @@ function buildAppShell() {
     const app = document.getElementById('app-container');
     app.innerHTML = `
         <header>
-            <h1>Yen Sid's Magic Planner</h1>
+            <h1>Yen Sid's Ride Recommender</h1>
             <p>Your guide to the quickest and closest rides.</p>
         </header>
         <div id="dynamic-content"></div>
@@ -345,16 +345,27 @@ function renderLoading() {
 // API FETCH HELPERS
 // ------------------------------------------------------------
 
+function getDateInTimeZone(timeZone) {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+    // Format comes like "2025-12-04"
+    return formatter.format(now);
+}
+
 async function fetchParkHours(parkKey, parkId) {
     const park = PARK_LAND_LOCATIONS[parkKey];
     const url = `${BASE_THEMEPARKS_API}/${parkId}/schedule`;
     
-    // Formatting object used to display hours
     const formatting = {
         hour: "numeric",
         minute: "2-digit",
         timeZone: park.timeZone,
-        hour12: true 
+        hour12: true
     };
 
     try {
@@ -362,63 +373,91 @@ async function fetchParkHours(parkKey, parkId) {
         if (!res.ok) throw new Error("API call failed.");
 
         const data = await res.json();
-        const today = new Date().toISOString().split('T')[0];
-        const now = Date.now();
         
-        // Find today's primary operating hours entry
-        const op = data.schedule.find(s => s.date === today && s.type === 'OPERATING');
+        // Get today's date in the PARK'S timezone, not UTC
+        const now = Date.now();
+        const todayInParkTz = new Date().toLocaleString("en-US", {
+            timeZone: park.timeZone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+        });
+        
+        // Convert to YYYY-MM-DD format
+        const [month, day, year] = todayInParkTz.split(/[/,\s]+/);
+        const today = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
-        if (!op) {
-            // Schedule data missing/unknown
+        const todaySchedules = (data.schedule || []).filter(s => s.date === today);
+
+        if (!todaySchedules.length) {
             return {
-                isAvailable: false,
-                isClosed: false,
+                status: "UNKNOWN",
                 message: "Hours: Data unavailable."
             };
         }
 
-        // --- SCHEDULE FOUND: CHECK IF CURRENT TIME IS WITHIN OPERATING WINDOW ---
-        
-        // Convert ISO strings (which include timezone info) to millisecond timestamps
-        const openTime = new Date(op.openingTime).getTime();
-        const closeTime = new Date(op.closingTime).getTime();
-        
-        // Convert ISO strings to local time strings for display
-        const open = new Date(op.openingTime).toLocaleTimeString('en-US', formatting);
-        const close = new Date(op.closingTime).toLocaleTimeString('en-US', formatting);
+        // Find operating windows
+        const operatingWindows = todaySchedules
+            .filter(s => s.type === "OPERATING")
+            .map(s => ({
+                openTime: new Date(s.openingTime).getTime(),
+                closeTime: new Date(s.closingTime).getTime(),
+                display: {
+                    open: new Date(s.openingTime).toLocaleTimeString("en-US", formatting),
+                    close: new Date(s.closingTime).toLocaleTimeString("en-US", formatting)
+                }
+            }))
+            .sort((a, b) => a.openTime - b.openTime); // Sort by opening time
 
-
-        if (now < openTime) {
-            // Park is not open yet
+        if (!operatingWindows.length) {
             return {
-                isAvailable: false,
-                isClosed: true,
-                message: `Hours: <strong>Opens at ${open} ${park.timeZoneAbbr}</strong>.`
-            };
-        }
-        if (now > closeTime) {
-            // Park is already closed
-            return {
-                isAvailable: false,
-                isClosed: true,
-                message: `Hours: Park closed since ${close} ${park.timeZoneAbbr}.`
+                status: "CLOSED",
+                message: "Hours: No operating hours today."
             };
         }
 
-        // Park is open right now (openTime <= now <= closeTime)
+        // Check if park is currently open
+        const currentWindow = operatingWindows.find(w => now >= w.openTime && now <= w.closeTime);
+
+        if (currentWindow) {
+            // Check if there's a ticketed event right now
+            const ticketedNow = todaySchedules
+                .filter(s => s.type === "TICKETED_EVENT")
+                .find(s => now >= new Date(s.openingTime).getTime() && now <= new Date(s.closingTime).getTime());
+
+            const ticketedMessage = ticketedNow ? ` | Ticketed Event: ${ticketedNow.description}` : "";
+
+            return {
+                status: "OPEN",
+                message: `Hours: <strong>${currentWindow.display.open}</strong> – <strong>${currentWindow.display.close}</strong> (Currently Open)${ticketedMessage}`
+            };
+        }
+
+        // Park not currently open - check if we're before first opening
+        const nextWindow = operatingWindows.find(w => now < w.openTime);
+        if (nextWindow) {
+            return {
+                status: "CLOSED",
+                message: `Hours: <strong>Opens at ${nextWindow.display.open}</strong> ${park.timeZoneAbbr}`
+            };
+        }
+
+        // All operating windows passed
+        const lastWindow = operatingWindows[operatingWindows.length - 1];
         return {
-            isAvailable: true,
-            isClosed: false,
-            message: `Hours: <strong>${open} ${park.timeZoneAbbr}</strong> – <strong>${close} ${park.timeZoneAbbr}</strong> (Currently Open)`
+            status: "CLOSED",
+            message: `Hours: Park closed since ${lastWindow.display.close} ${park.timeZoneAbbr}`
         };
-    } catch {
+
+    } catch (error) {
+        console.error("Error fetching park hours:", error);
         return {
-            isAvailable: false,
-            isClosed: false,
+            status: "UNKNOWN",
             message: "Hours: Data unavailable."
         };
     }
 }
+
 
 /**
  * Fetches the current weather forecast using the NWS API.
